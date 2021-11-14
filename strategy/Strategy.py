@@ -1,5 +1,6 @@
 import ta
-class Strategy:
+from datetime import datetime
+class Strategy(object):
     
     def __init__(self, data):
         self.data = data
@@ -55,11 +56,22 @@ class Strategy:
             self.data["RSI"] = rsi.rsi()
 
     def afficheIndicators(self):
-        i = 1
-        print("Liste des indicateurs :")
-        for indic in self.indicators:
-            print(str(i)+" - "+str(indic))
-            i=+1 
+        if(len(self.indicators) == 0):
+            print("Pas d'indicateurs.")
+        else:
+            i = 1
+            print("Liste des indicateurs :")
+            for indic in self.indicators:
+                print(str(i)+" - "+str(indic))
+                i=+1 
+    
+    def test(self, debut, fin, levier=1, commission=0.01, capital = 100):
+        print("Lancement du backtest")
+        print("Paramètres :")
+        print("Capital = "+str(capital))
+        print("Commission = "+str(commission))
+        print("Levier = "+str(levier))
+        print("Plage de date : de "+debut+" à "+fin)
 
     
 
