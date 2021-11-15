@@ -1,8 +1,11 @@
+
 import pandas as pd
 import datetime
 import ta
 from binance import Client
 from strategy import Strategy as strat
+from strategy import OneminStrategy
+import divergence
 
 def reglageData(df):
     del df['close_time']
@@ -24,15 +27,15 @@ def getBinanceData(devise, plage, debut):
     df = reglageData(df)
     return df
 
-df = getBinanceData("ETHUSDT", "1h", "01 October 2021")
+df = getBinanceData("BTCUSDT", "1m", "15 November 2021")
 
-strat = strat.Strategy(df)
-strat.addIndicator("sma_200")
-strat.addIndicator("ema_50")
-strat.addIndicator("macd")
-strat.addIndicator("rsi") 
+st = strat.Strategy(df)
+st.addIndicator("rsi")
+#df = st.data
 
 
 
-print(df[:100])
+
+
+
 
