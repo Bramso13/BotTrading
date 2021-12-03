@@ -7,10 +7,13 @@ class SuperTrendStrategy(Strategy.Strategy):
     def test(self, affiche, debut, fin, levier=1, commission=0.01, capital = 100):
         try:
             super().test(affiche, debut, fin, levier, commission, capital)
-            self.addIndicator('rsi') # 4
-            self.addIndicator('ema_90') #5 
-            self.addIndicator('stoch_rsi') #6
-            self.addIndicator('supertrend') #7
+            
+            self.addIndicator('rsi', self.data["Close"]) # 4
+            self.addIndicator('ema_90', self.data["Close"]) #5 
+            self.addIndicator('stoch_rsi', self.data["Close"]) #6
+            self.addIndicator('supertrend', self.data["Close"]) #7
+            #print(self.data)
+
             capitalFin = capital
             totalCommission = 0
             nbDevise = 0

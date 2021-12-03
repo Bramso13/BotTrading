@@ -79,41 +79,44 @@ class Strategy(object):
             self.setGainP(((gain*100)/base)-100)
             return ((gain*100)/base)-100
 
-    def addIndicator(self, indicator):
+    def addIndicator(self, indicator, close):
         self.indicators.append(indicator)
         spli = indicator.split("_")
         if(spli[0] == "sma"):
             st = "SMA"+str(spli[1])
-            self.data[st] = ta.trend.sma_indicator(self.data['close'], int(spli[1]))
+            self.data[st] = ta.trend.sma_indicator(close, int(spli[1]))
         if(spli[0] == "ema"):
-            self.data["EMA"+spli[1].capitalize()] = ta.trend.ema_indicator(self.data['close'], int(spli[1]))
+            self.data["EMA"+spli[1].capitalize()] = ta.trend.ema_indicator(close, int(spli[1]))
         if(spli[0] == "wma"):
-            self.data["WMA"+spli[1].capitalize()] = ta.trend.wma_indicator(self.data['close'], int(spli[1]))
+            self.data["WMA"+spli[1].capitalize()] = ta.trend.wma_indicator(close, int(spli[1]))
         if indicator == "macd":
-            self.data["MACD"] = ta.trend.macd(self.data['close'])
+            self.data["MACD"] = ta.trend.macd(close)
         if indicator == "rsi":
-            rsi = ta.momentum.RSIIndicator(self.data['close'])
+            rsi = ta.momentum.RSIIndicator(close)
             self.data["RSI"] = rsi.rsi()
         if indicator == "stoch_rsi":
-            self.data["STOCH_RSI"] = ta.momentum.stochrsi(self.data['close'])
+            self.data["STOCH_RSI"] = ta.momentum.stochrsi(close)
         if indicator == "supertrend":
             ST_length = 20
             ST_multiplier = 3.0
-            superTrend = pda.supertrend(self.data['high'], self.data['low'], self.data['close'], length=ST_length, multiplier=ST_multiplier)
+            superTrend = pda.supertrend(self.data['High'], self.data['Low'], close, length=ST_length, multiplier=ST_multiplier)
             self.data['SUPER_TREND'] = superTrend['SUPERT_'+str(ST_length)+"_"+str(ST_multiplier)]
             self.data['SUPER_TREND_DIRECTION1'] = superTrend['SUPERTd_'+str(ST_length)+"_"+str(ST_multiplier)]
 
             ST_length = 20
             ST_multiplier = 4.0
-            superTrend = pda.supertrend(self.data['high'], self.data['low'], self.data['close'], length=ST_length, multiplier=ST_multiplier)
+            superTrend = pda.supertrend(self.data['High'], self.data['Low'], close, length=ST_length, multiplier=ST_multiplier)
             self.data['SUPER_TREND'] = superTrend['SUPERT_'+str(ST_length)+"_"+str(ST_multiplier)]
             self.data['SUPER_TREND_DIRECTION2'] = superTrend['SUPERTd_'+str(ST_length)+"_"+str(ST_multiplier)]
 
             ST_length = 40
             ST_multiplier = 8.0
-            superTrend = pda.supertrend(self.data['high'], self.data['low'], self.data['close'], length=ST_length, multiplier=ST_multiplier)
+            superTrend = pda.supertrend(self.data['High'], self.data['Low'], close, length=ST_length, multiplier=ST_multiplier)
             self.data['SUPER_TREND'] = superTrend['SUPERT_'+str(ST_length)+"_"+str(ST_multiplier)]
             self.data['SUPER_TREND_DIRECTION3'] = superTrend['SUPERTd_'+str(ST_length)+"_"+str(ST_multiplier)]
+        if indicator == "adx":
+            self.data["ADX"] = pda.adx(self.data['High'], self.data['Low'], close)["ADX_14"]
+            
 
     def afficheIndicators(self):
         if(len(self.indicators) == 0):
