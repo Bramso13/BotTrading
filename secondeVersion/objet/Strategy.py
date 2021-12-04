@@ -4,7 +4,7 @@ import pandas as pd
 
 class Strategy:
 
-    strategies = ["emaCrossing"]
+    strategies = ["emaCrossing", "stoch_rsiEma", "threeEma", "superTrendStrategy"]
     def __init__(self):
 
         self.position = pd.Series([], dtype='float64')
@@ -34,18 +34,20 @@ class Strategy:
         for i in range(0, len(self.stoploss)):
             if self.type.iloc[i] == "long":
                 if pos <= self.stoploss.iloc[i]:
-                    perte = self.position.iloc[i] - self.stoploss.iloc[i]
-                    info.makeTrade(-perte)
-                    print("Stop loss ", self.stoploss.iloc[i], "perte =", -perte)
+                    nb = (info.fin * info.levier)/self.position.iloc[i]
+                    benef = nb * self.stoploss.iloc[i]
+                    print("Stop loss long", self.stoploss.iloc[i], "perte =", benef-(info.fin*info.levier))
+                    info.makeTrade(benef-(info.fin*info.levier))
                     self.stoploss.iloc[i] = -1
                     self.position.iloc[i] = -1
                     self.type.iloc[i] = -1
                     self.takeprofit.iloc[i] = -1
             elif self.type.iloc[i] == "short":
                 if pos >= self.stoploss.iloc[i]:
-                    perte = self.stoploss.iloc[i] - self.position.iloc[i]
-                    print("Stop loss ", self.stoploss.iloc[i], "perte =", -perte)
-                    info.makeTrade(-perte)
+                    nb = (info.fin * info.levier) / self.position.iloc[i]
+                    benef = nb * (self.position.iloc[i] + (self.position.iloc[i] - self.stoploss.iloc[i]))
+                    print("Stop loss short", self.stoploss.iloc[i], "perte =", benef-(info.fin*info.levier))
+                    info.makeTrade(benef-(info.fin*info.levier))
                     self.stoploss.iloc[i] = -1
                     self.position.iloc[i] = -1
                     self.type.iloc[i] = -1
@@ -55,18 +57,20 @@ class Strategy:
         for i in range(0, len(self.takeprofit)):
             if self.type.iloc[i] == "long":
                 if pos >= self.takeprofit.iloc[i]:
-                    perte = self.takeprofit.iloc[i] - self.position.iloc[i]
-                    info.makeTrade(perte)
-                    print("TP ", self.takeprofit.iloc[i], "gain =", perte)
+                    nb = (info.fin * info.levier) / self.position.iloc[i]
+                    benef = nb * self.takeprofit.iloc[i]
+                    print("TP long", self.takeprofit.iloc[i], "gain =", benef-(info.fin*info.levier))
+                    info.makeTrade(benef-(info.fin*info.levier))
                     self.stoploss.iloc[i] = -1
                     self.position.iloc[i] = -1
                     self.type.iloc[i] = -1
                     self.takeprofit.iloc[i] = -1
             elif self.type.iloc[i] == "short":
                 if pos <= self.takeprofit.iloc[i]:
-                    perte = self.position.iloc[i] - self.takeprofit.iloc[i]
-                    print("TP ", self.takeprofit.iloc[i], "gain =", perte)
-                    info.makeTrade(perte)
+                    nb = (info.fin * info.levier) / self.position.iloc[i]
+                    benef = nb * (self.position.iloc[i] + (self.position.iloc[i] - self.takeprofit.iloc[i]))
+                    print("TP Short", self.takeprofit.iloc[i], "gain =", benef-(info.fin*info.levier))
+                    info.makeTrade(benef-(info.fin*info.levier))
                     self.stoploss.iloc[i] = -1
                     self.position.iloc[i] = -1
                     self.type.iloc[i] = -1
@@ -90,10 +94,65 @@ class Strategy:
                 if float(close.iloc[i-1]) > float(ema_25.iloc[i-1]) and float(price) <= float(e25):
                     self.short(price, price * (1 + (margeP/100)), price * (1 - (margeG/100)))
 
-io = Info(200)
-st = Strategy()
-da = Data()
-da.getForexData("EURUSD=X", "1mo", "15m")
-st.emaCrossing(da, io)
-io.resume()
+    def stoch_rsiEma(self, data : Data, info : Info):
+        ema_200 = data.ema(200)
+        stoch_rsi = data.stoch_Rsi()
+        close = data.getClose()
+        margeP = 0.1
+        margeG = 0.2
+        for i in range(0, len(close)):
+            price = float(close.iloc[i])
+            e200 = float(ema_200.iloc[i])
+            sto = float(stoch_rsi.iloc[i])
+            self.TapStopLoss(price, info)
+            self.TapTakeProfit(price, info)
+            if i > 200:
+                if float(price) > float(e200) and float(sto) < 20 and float(close.iloc[i-1]) < float(ema_200.iloc[i-1]):
+                    self.long(price, price * (1 - (margeP/100)), price * (1 + (margeG/100)))
+                if float(price) < float(e200) and float(sto) > 80 and float(close.iloc[i-1]) > float(ema_200.iloc[i-1]):
+                    self.short(price, price * (1 + (margeP / 100)), price * (1 - (margeG / 100)))
+
+    def threeEma(self, data : Data, info : Info):
+        ema_5 = data.ema(5)
+        ema_21 = data.ema(21)
+        ema_63 = data.ema(63)
+        close = data.getClose()
+        flag_long = False
+        flag_short = False
+        margeP = 0.1
+        margeG = 0.2
+
+        for i in range(0, len(close)):
+            price = close.iloc[i]
+            short = ema_5.iloc[i]
+            middle = ema_21.iloc[i]
+            long = ema_63.iloc[i]
+            self.TapStopLoss(price, info)
+            self.TapTakeProfit(price, info)
+            if middle < long and short < middle and flag_long == False and flag_short == False:
+                self.long(price, price * (1 - (margeP/100)), price * (1 + (margeG/100)))
+                flag_short = True
+            elif flag_short == True and short > middle:
+                self.short(price, price * (1 + (margeP / 100)), price * (1 - (margeG / 100)))
+                flag_short = False
+    def superTrendStrategy(self, data : Data, info : Info):
+        superTrend = data.supertrend(20, 0.3)
+        ema200 = data.ema(200)
+        close = data.getClose()
+        margeP = 0.1
+        margeG = 0.2
+
+        for i in range(0, len(close)):
+            price = close.iloc[i]
+            e200 = ema200.iloc[i]
+            avant = superTrend.iloc[i-1, 1]
+            apres = superTrend.iloc[i, 1]
+            self.TapStopLoss(price, info)
+            self.TapTakeProfit(price, info)
+            if float(avant) == -1 and float(apres) == 1 and price > e200:
+                self.long(price, price * (1 - (margeP / 100)), price * (1 + (margeG / 100)))
+            if float(avant)==1 and float(apres)==-1 and price < e200:
+                self.short(price, price * (1 + (margeP / 100)), price * (1 - (margeG / 100)))
+
+
 

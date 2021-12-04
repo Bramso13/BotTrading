@@ -1,14 +1,18 @@
 
 class Info:
 
-    def __init__(self, capital):
+    def __init__(self, capital, levier=1):
         self.capital = capital
+        self.levier = levier
         self.nbTrade = 0
         self.nbTradeG = 0
         self.nbTradeP = 0
         self.gainMax = 0
         self.perteMax = 0
         self.fin = capital
+
+    def setCapital(self, capital):
+        self.capital = capital
 
     def makeTrade(self, gain : float):
         self.nbTrade+=1
