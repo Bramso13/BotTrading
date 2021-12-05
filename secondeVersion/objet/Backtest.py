@@ -18,6 +18,7 @@ class BackTest:
             if cap < 0:
                 raise Exception("Le capital entré est négatif")
             self.info.setCapital(cap)
+            self.info.fin = cap
             levier = float(input("Insérez le levier souhaitée :"))
             if levier < 1:
                 raise Exception("Le levier saisi est incorrect")

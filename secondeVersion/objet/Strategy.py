@@ -4,7 +4,7 @@ import pandas as pd
 
 class Strategy:
 
-    strategies = ["emaCrossing", "stoch_rsiEma", "threeEma", "superTrendStrategy"]
+    strategies = ["emaCrossing", "stoch_rsiEma", "threeEma", "superTrendStrategy", "adxAO"]
     def __init__(self):
 
         self.position = pd.Series([], dtype='float64')
@@ -136,8 +136,9 @@ class Strategy:
                 self.short(price, price * (1 + (margeP / 100)), price * (1 - (margeG / 100)))
                 flag_short = False
     def superTrendStrategy(self, data : Data, info : Info):
-        superTrend = data.supertrend(20, 0.3)
+        superTrend = data.supertrend(10, 1)
         ema200 = data.ema(200)
+        stoch_rsi = data.stoch_Rsi()
         close = data.getClose()
         margeP = 0.1
         margeG = 0.2
@@ -145,14 +146,49 @@ class Strategy:
         for i in range(0, len(close)):
             price = close.iloc[i]
             e200 = ema200.iloc[i]
+            sto = float(stoch_rsi.iloc[i])
             avant = superTrend.iloc[i-1, 1]
             apres = superTrend.iloc[i, 1]
             self.TapStopLoss(price, info)
             self.TapTakeProfit(price, info)
-            if float(avant) == -1 and float(apres) == 1 and price > e200:
+            if float(avant) == -1 and float(apres) == 1 and price > e200 and float(sto) < 20:
                 self.long(price, price * (1 - (margeP / 100)), price * (1 + (margeG / 100)))
-            if float(avant)==1 and float(apres)==-1 and price < e200:
+            if float(avant)==1 and float(apres)==-1 and price < e200 and float(sto) > 80:
                 self.short(price, price * (1 + (margeP / 100)), price * (1 - (margeG / 100)))
+
+    def adxAO(self, data : Data, info : Info):
+        ema5 = data.ema(5)
+        ema50 = data.ema(50)
+        ema21 = data.ema(21)
+        ema200 = data.ema(200)
+        bbb = data.BBB()
+        adx = data.adx()
+        ao = data.awesomeOscillator()
+        close = data.getClose()
+        margeP = 2
+        margeG = 1
+        for i in range(0, len(close)):
+            e5 = ema5.iloc[i]
+            ave5 = ema5.iloc[i-1]
+            e21 = ema21.iloc[i]
+            ave21 = ema21.iloc[i - 1]
+            e50 = ema50.iloc[i]
+            ave50 = ema50.iloc[i - 1]
+            e200 = ema200.iloc[i]
+            ave200 = ema200.iloc[i - 1]
+            bb = bbb.iloc[i]
+            aoo = ao.iloc[i]
+            adxx = adx.iloc[i]
+            price = close.iloc[i]
+
+            self.TapStopLoss(price, info)
+            self.TapTakeProfit(price, info)
+            if ave5 < ave21 and e5 >= e21 and ave50 < ave200 and e50 >= e200 and bb > 0.75 and adxx > 15 and aoo > 2 and price > e5:
+                self.long(price, price * (1 - (margeP / 100)), price * (1 + (margeG / 100)))
+            if ave5 > ave21 and e5 <= e21 and ave50 > ave200 and e50 <= e200 and bb < 0.15 and adxx > 15 and aoo < 2 and price < e5:
+                self.short(price, price * (1 + (margeP / 100)), price * (1 - (margeG / 100)))
+
+
 
 
 

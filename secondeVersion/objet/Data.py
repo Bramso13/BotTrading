@@ -16,6 +16,7 @@ class Data:
         self.volume = pd.Series([], dtype='float64')
         self.indicators = pd.DataFrame
 
+
     def getBinanceData(self, devise, timeframe, debut):
         try:
             klinesT = Client().get_historical_klines(devise, timeframe, debut)
@@ -31,13 +32,17 @@ class Data:
 
     def getForexData(self, devise, period, interval):
         try:
-            df = yf.download(tickers=devise, period=period, interval=interval)
+            df = yf.download(
+                tickers=devise,
+                period=period,
+                interval=interval,
+            )
             self.close = df['Adj Close']
             self.low = df['Low']
             self.high = df['High']
             self.volume = df['Volume']
         except Exception as e:
-            print(format(e))
+            print("Erreur :",format(e))
 
     def getLow(self) -> pd.Series:
         return self.low
@@ -75,5 +80,24 @@ class Data:
         superTrend = pda.supertrend(self.high, self.low, self.close, length=length,
                                     multiplier=multiplier)
         return superTrend
+    def BBB(self):
+        hband = ta.volatility.bollinger_hband(self.close)
+        lband = ta.volatility.bollinger_lband(self.close)
+        #sub = self.close.sub(lband)
+        #sub2 = hband.sub(lband)
+        #div = sub.div(sub2)
+        #bbb = div.mul(100)
+        bbb = ((self.close - lband)/(hband - lband))*100
+        return bbb
+    def awesomeOscillator(self):
+        awe = ta.momentum.awesome_oscillator(self.high, self.low)
+        return awe
+    def adx(self):
+        adxe = pda.adx(self.high, self.low, self.close)["ADX_14"]
+        return adxe
+
+#d = Data()
+#d.getBinanceData("ETHUSDT", "15m", "3 December 2021")
+#print(d.adx())
 
 
